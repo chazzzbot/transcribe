@@ -38,7 +38,7 @@
             { "name": "WEBSITE_RUN_FROM_PACKAGE", "value": "1" },
             {
               "name": "AzureWebJobsStorage",
-              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', parameters('storageName'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('storageName')), '2024-02-01').keys[0].value)]"
+              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', parameters('storageName'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('storageName')), '2025-01-01').keys[0].value)]"
             },
             {
               "name": "SPEECH_RESOURCE_KEY",

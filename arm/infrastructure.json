@@ -14,7 +14,7 @@
   "resources": [
     {
       "type": "Microsoft.Storage/storageAccounts",
-      "apiVersion": "2024-02-01",
+      "apiVersion": "2025-01-01",
       "name": "[variables('storageName')]",
       "location": "[parameters('location')]",
       "sku": { "name": "[parameters('storageSku')]" },
@@ -26,21 +26,21 @@
     },
     {
       "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
-      "apiVersion": "2024-02-01",
+      "apiVersion": "2025-01-01",
       "name": "[format('{0}/default/input', variables('storageName'))]",
       "dependsOn": [ "[variables('storageName')]" ],
       "properties": { "publicAccess": "None" }
     },
     {
       "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
-      "apiVersion": "2024-02-01",
+      "apiVersion": "2025-01-01",
       "name": "[format('{0}/default/output', variables('storageName'))]",
       "dependsOn": [ "[variables('storageName')]" ],
       "properties": { "publicAccess": "None" }
     },
     {
       "type": "Microsoft.Storage/storageAccounts/tableServices/tables",
-      "apiVersion": "2024-02-01",
+      "apiVersion": "2025-01-01",
       "name": "[format('{0}/default/Transcripts', variables('storageName'))]",
       "dependsOn": [ "[variables('storageName')]" ],
       "properties": {}
