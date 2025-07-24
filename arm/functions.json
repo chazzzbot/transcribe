@@ -42,11 +42,11 @@
               "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', parameters('storageName'),
                        ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('storageName')), '2025-01-01').keys[0].value)]" },
 
-            /* Speech key & region (API version added to reference) */
+            /* Speech key & region */
             { "name": "SPEECH_RESOURCE_KEY",
               "value": "[listKeys(resourceId('Microsoft.CognitiveServices/accounts', parameters('speechName')), '2025-06-01').key1]" },
             { "name": "SPEECH_RESOURCE_REGION",
-              "value": "[reference(resourceId('Microsoft.CognitiveServices/accounts', parameters('speechName')), '2025-06-01').location]" }
+              "value": "[parameters('location')]" }
           ]
         },
         "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('appPlan'))]"
@@ -57,7 +57,7 @@
 
     {
       "type": "Microsoft.EventGrid/systemTopics",
-      "apiVersion": "2024-06-01",
+      "apiVersion": "2022-06-15",
       "name": "[variables('systemTopic')]",
       "location": "[parameters('location')]",
       "properties": {
@@ -67,7 +67,7 @@
     },
     {
       "type": "Microsoft.EventGrid/systemTopics/eventSubscriptions",
-      "apiVersion": "2024-06-01",
+      "apiVersion": "2022-06-15",
       "name": "[format('{0}/input-to-whisper', variables('systemTopic'))]",
       "dependsOn": [ "[variables('systemTopic')]" ],
       "properties": {
@@ -83,7 +83,7 @@
     },
     {
       "type": "Microsoft.EventGrid/systemTopics/eventSubscriptions",
-      "apiVersion": "2024-06-01",
+      "apiVersion": "2022-06-15",
       "name": "[format('{0}/output-to-table', variables('systemTopic'))]",
       "dependsOn": [ "[variables('systemTopic')]" ],
       "properties": {
