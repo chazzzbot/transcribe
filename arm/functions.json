@@ -9,8 +9,8 @@
     "speechName":      { "type": "string" }
   },
   "variables": {
-    "appPlan":   "[concat(parameters('namePrefix'),'-plan')]",
-    "funcName":  "[concat(parameters('namePrefix'),'-func')]",
+    "appPlan":    "[concat(parameters('namePrefix'),'-plan')]",
+    "funcName":   "[concat(parameters('namePrefix'),'-func')]",
     "systemTopic": "[concat(parameters('namePrefix'),'-sttopic')]"
   },
   "resources": [
@@ -36,23 +36,25 @@
           "appSettings": [
             { "name": "FUNCTIONS_WORKER_RUNTIME", "value": "[parameters('functionRuntime')]" },
             { "name": "WEBSITE_RUN_FROM_PACKAGE", "value": "1" },
-            {
-              "name": "AzureWebJobsStorage",
-              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', parameters('storageName'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('storageName')), '2025-01-01').keys[0].value)]"
-            },
-            {
-              "name": "SPEECH_RESOURCE_KEY",
-              "value": "[listKeys(resourceId('Microsoft.CognitiveServices/accounts', parameters('speechName')), '2025-06-01').key1]"
-            },
-            {
-              "name": "SPEECH_RESOURCE_REGION",
-              "value": "[reference(resourceId('Microsoft.CognitiveServices/accounts', parameters('speechName'))).location]"
-            }
+
+            /* Storage connection string (GA API version) */
+            { "name": "AzureWebJobsStorage",
+              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', parameters('storageName'),
+                       ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('storageName')), '2025-01-01').keys[0].value)]" },
+
+            /* Speech key & region (API version added to reference) */
+            { "name": "SPEECH_RESOURCE_KEY",
+              "value": "[listKeys(resourceId('Microsoft.CognitiveServices/accounts', parameters('speechName')), '2025-06-01').key1]" },
+            { "name": "SPEECH_RESOURCE_REGION",
+              "value": "[reference(resourceId('Microsoft.CognitiveServices/accounts', parameters('speechName')), '2025-06-01').location]" }
           ]
         },
         "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('appPlan'))]"
       }
     },
+
+    /* ----------  Event Grid wiring  ---------- */
+
     {
       "type": "Microsoft.EventGrid/systemTopics",
       "apiVersion": "2024-06-01",
@@ -97,3 +99,4 @@
     }
   ]
 }
+
