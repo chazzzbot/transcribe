@@ -32,8 +32,6 @@
       "dependsOn": [ "[variables('appPlan')]" ],
       "properties": {
         "siteConfig": {
-          /* ↓ GA runtime for WestEurope */
-          "linuxFxVersion": "Python|3.9",
           "appSettings": [
             { "name": "FUNCTIONS_WORKER_RUNTIME", "value": "[parameters('functionRuntime')]" },
             { "name": "WEBSITE_RUN_FROM_PACKAGE", "value": "1" },
@@ -51,8 +49,6 @@
         "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('appPlan'))]"
       }
     },
-
-    /* ----------  Event Grid wiring (2022‑06‑15 schema) ---------- */
 
     {
       "type": "Microsoft.EventGrid/systemTopics",
