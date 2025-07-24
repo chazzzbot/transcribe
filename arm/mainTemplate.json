@@ -58,8 +58,8 @@
           "namePrefix":      { "value": "[parameters('namePrefix')]" },
           "location":        { "value": "[parameters('location')]" },
           "functionRuntime": { "value": "[parameters('functionRuntime')]" },
-          "storageName":     { "value": "[deployment('linked-infrastructure').outputs.storageName.value]" },
-          "speechName":      { "value": "[deployment('linked-infrastructure').outputs.speechName.value]" }
+		"storageName": { "value": "[reference('linked-infrastructure').outputs.storageName.value]" },
+		"speechName":  { "value": "[reference('linked-infrastructure').outputs.speechName.value]" }
         }
       }
     },
