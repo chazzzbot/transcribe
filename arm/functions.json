@@ -32,17 +32,16 @@
       "dependsOn": [ "[variables('appPlan')]" ],
       "properties": {
         "siteConfig": {
-          "linuxFxVersion": "[concat('Python|', if(equals(parameters('functionRuntime'),'python'),'3.11','18-lts'))]",
+          /* ↓ GA runtime for WestEurope */
+          "linuxFxVersion": "Python|3.10",
           "appSettings": [
             { "name": "FUNCTIONS_WORKER_RUNTIME", "value": "[parameters('functionRuntime')]" },
             { "name": "WEBSITE_RUN_FROM_PACKAGE", "value": "1" },
 
-            /* Storage connection string (GA API version) */
             { "name": "AzureWebJobsStorage",
               "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', parameters('storageName'),
                        ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('storageName')), '2025-01-01').keys[0].value)]" },
 
-            /* Speech key & region */
             { "name": "SPEECH_RESOURCE_KEY",
               "value": "[listKeys(resourceId('Microsoft.CognitiveServices/accounts', parameters('speechName')), '2025-06-01').key1]" },
             { "name": "SPEECH_RESOURCE_REGION",
@@ -53,7 +52,7 @@
       }
     },
 
-    /* ----------  Event Grid wiring  ---------- */
+    /* ----------  Event Grid wiring (2022‑06‑15 schema) ---------- */
 
     {
       "type": "Microsoft.EventGrid/systemTopics",
@@ -73,7 +72,9 @@
       "properties": {
         "destination": {
           "endpointType": "AzureFunction",
-          "resourceId": "[resourceId('Microsoft.Web/sites/functions', variables('funcName'), 'StartTranscription')]"
+          "properties": {
+            "resourceId": "[resourceId('Microsoft.Web/sites/functions', variables('funcName'), 'StartTranscription')]"
+          }
         },
         "filter": {
           "includedEventTypes": [ "Microsoft.Storage.BlobCreated" ],
@@ -89,7 +90,9 @@
       "properties": {
         "destination": {
           "endpointType": "AzureFunction",
-          "resourceId": "[resourceId('Microsoft.Web/sites/functions', variables('funcName'), 'SaveTranscript')]"
+          "properties": {
+            "resourceId": "[resourceId('Microsoft.Web/sites/functions', variables('funcName'), 'SaveTranscript')]"
+          }
         },
         "filter": {
           "includedEventTypes": [ "Microsoft.Storage.BlobCreated" ],
