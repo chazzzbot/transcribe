@@ -9,7 +9,7 @@
   },
   "variables": {
     "storageName": "[toLower(concat(parameters('namePrefix'),'stg',uniqueString(resourceGroup().id)))]",
-    "speechName":  "[concat(parameters('namePrefix'),'-speech')]"
+    "speechName":  "[concat(parameters('namePrefix'),'-speech', uniqueString(resourceGroup().id))]"
   },
   "resources": [
     {

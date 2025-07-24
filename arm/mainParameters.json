@@ -3,7 +3,7 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "namePrefix":   { "value": "mediatrans" },
-    "location":     { "value": "uksouth" },
+    "location":     { "value": "westeurope" },
     "staticRepoUrl":{ "value": "chazzzbot/transcribe" }
   }
 }
