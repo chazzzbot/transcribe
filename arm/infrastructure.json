@@ -1,0 +1,63 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "namePrefix": { "type": "string" },
+    "location":   { "type": "string" },
+    "storageSku": { "type": "string" },
+    "speechSku":  { "type": "string" }
+  },
+  "variables": {
+    "storageName": "[toLower(concat(parameters('namePrefix'),'stg',uniqueString(resourceGroup().id)))]",
+    "speechName":  "[concat(parameters('namePrefix'),'-speech')]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2024-02-01",
+      "name": "[variables('storageName')]",
+      "location": "[parameters('location')]",
+      "sku": { "name": "[parameters('storageSku')]" },
+      "kind": "StorageV2",
+      "properties": {
+        "minimumTlsVersion": "TLS1_2",
+        "allowBlobPublicAccess": false
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+      "apiVersion": "2024-02-01",
+      "name": "[format('{0}/default/input', variables('storageName'))]",
+      "dependsOn": [ "[variables('storageName')]" ],
+      "properties": { "publicAccess": "None" }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+      "apiVersion": "2024-02-01",
+      "name": "[format('{0}/default/output', variables('storageName'))]",
+      "dependsOn": [ "[variables('storageName')]" ],
+      "properties": { "publicAccess": "None" }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts/tableServices/tables",
+      "apiVersion": "2024-02-01",
+      "name": "[format('{0}/default/Transcripts', variables('storageName'))]",
+      "dependsOn": [ "[variables('storageName')]" ],
+      "properties": {}
+    },
+    {
+      "type": "Microsoft.CognitiveServices/accounts",
+      "apiVersion": "2025-06-01",
+      "name": "[variables('speechName')]",
+      "location": "[parameters('location')]",
+      "kind": "SpeechServices",
+      "sku": { "name": "[parameters('speechSku')]" },
+      "identity": { "type": "SystemAssigned" },
+      "properties": { "publicNetworkAccess": "Enabled" }
+    }
+  ],
+  "outputs": {
+    "storageName": { "type": "string", "value": "[variables('storageName')]" },
+    "speechName":  { "type": "string", "value": "[variables('speechName')]" }
+  }
+}

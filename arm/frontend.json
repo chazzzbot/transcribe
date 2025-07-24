@@ -1,0 +1,44 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "namePrefix":     { "type": "string" },
+    "location":       { "type": "string" },
+    "staticSiteSku":  { "type": "string" },
+    "staticRepoUrl":  { "type": "string" },
+    "staticBranch":   { "type": "string" }
+  },
+  "variables": {
+    "staticName":  "[concat(parameters('namePrefix'),'-swa')]",
+    "signalrName": "[concat(parameters('namePrefix'),'-signalr')]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Web/staticSites",
+      "apiVersion": "2024-04-01",
+      "name": "[variables('staticName')]",
+      "location": "[parameters('location')]",
+      "sku": { "name": "[parameters('staticSiteSku')]" },
+      "properties": {
+        "repositoryUrl": "[concat('https://github.com/', parameters('staticRepoUrl'))]",
+        "branch": "[parameters('staticBranch')]",
+        "buildProperties": {
+          "appLocation": "/app",
+          "apiLocation": "",
+          "outputLocation": "build"
+        }
+      }
+    },
+    {
+      "condition": "[not(equals(parameters('staticSiteSku'), 'Free'))]",
+      "type": "Microsoft.SignalRService/SignalR",
+      "apiVersion": "2023-10-01",
+      "name": "[variables('signalrName')]",
+      "location": "[parameters('location')]",
+      "sku": { "name": "Free_F1", "tier": "Free" }
+    }
+  ],
+  "outputs": {
+    "staticSiteUrl": { "type": "string", "value": "[reference(resourceId('Microsoft.Web/staticSites', variables('staticName'))).defaultHostname]" }
+  }
+}

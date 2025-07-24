@@ -1,0 +1,89 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+
+  /* ---------- parameters ---------- */
+  "parameters": {
+    "namePrefix":      { "type": "string", "metadata": { "description": "Short, lowercase prefix used in every resource name." } },
+    "location":        { "type": "string", "defaultValue": "[resourceGroup().location]" },
+    "storageSku":      { "type": "string", "defaultValue": "Standard_LRS" },
+    "speechSku":       { "type": "string", "defaultValue": "S0" },
+    "functionRuntime": { "type": "string", "defaultValue": "python" },
+    "staticSiteSku":   { "type": "string", "defaultValue": "Free" },
+    "staticRepoUrl":   { "type": "string", "defaultValue": "chazzzbot/transcribe", "metadata": { "description": "GitHub repo in <owner>/<repo> format for Static Web App CI/CD." } },
+    "staticBranch":    { "type": "string", "defaultValue": "main" },
+
+    /* NEW – base URL for nested templates */
+    "templateBaseUrl": {
+      "type": "string",
+      "defaultValue": "[concat('https://raw.githubusercontent.com/chazzzbot/transcribe/main/arm/')]",
+      "metadata": { "description": "Location of infrastructure.json, functions.json, frontend.json" }
+    }
+  },
+
+  /* ---------- resources ---------- */
+  "resources": [
+
+    /* ── nested template #1 : infrastructure ── */
+    {
+      "name": "linked-infrastructure",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2024-11-01",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[concat(parameters('templateBaseUrl'), 'infrastructure.json')]"
+        },
+        "parameters": {
+          "namePrefix": { "value": "[parameters('namePrefix')]" },
+          "location":   { "value": "[parameters('location')]" },
+          "storageSku": { "value": "[parameters('storageSku')]" },
+          "speechSku":  { "value": "[parameters('speechSku')]" }
+        }
+      }
+    },
+
+    /* ── nested template #2 : functions ── */
+    {
+      "name": "linked-functions",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2024-11-01",
+      "dependsOn": [ "linked-infrastructure" ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[concat(parameters('templateBaseUrl'), 'functions.json')]"
+        },
+        "parameters": {
+          "namePrefix":      { "value": "[parameters('namePrefix')]" },
+          "location":        { "value": "[parameters('location')]" },
+          "functionRuntime": { "value": "[parameters('functionRuntime')]" },
+          "storageName":     { "value": "[deployment('linked-infrastructure').outputs.storageName.value]" },
+          "speechName":      { "value": "[deployment('linked-infrastructure').outputs.speechName.value]" }
+        }
+      }
+    },
+
+    /* ── nested template #3 : frontend ── */
+    {
+      "name": "linked-frontend",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2024-11-01",
+      "dependsOn": [ "linked-functions" ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[concat(parameters('templateBaseUrl'), 'frontend.json')]"
+        },
+        "parameters": {
+          "namePrefix":    { "value": "[parameters('namePrefix')]" },
+          "location":      { "value": "[parameters('location')]" },
+          "staticSiteSku": { "value": "[parameters('staticSiteSku')]" },
+          "staticRepoUrl": { "value": "[parameters('staticRepoUrl')]" },
+          "staticBranch":  { "value": "[parameters('staticBranch')]" }
+        }
+      }
+    }
+  ]
+}
+

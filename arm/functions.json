@@ -1,0 +1,99 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "namePrefix":      { "type": "string" },
+    "location":        { "type": "string" },
+    "functionRuntime": { "type": "string" },
+    "storageName":     { "type": "string" },
+    "speechName":      { "type": "string" }
+  },
+  "variables": {
+    "appPlan":   "[concat(parameters('namePrefix'),'-plan')]",
+    "funcName":  "[concat(parameters('namePrefix'),'-func')]",
+    "systemTopic": "[concat(parameters('namePrefix'),'-sttopic')]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2023-01-01",
+      "name": "[variables('appPlan')]",
+      "location": "[parameters('location')]",
+      "sku": { "name": "Y1", "tier": "Dynamic" },
+      "kind": "functionapp"
+    },
+    {
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2023-01-01",
+      "name": "[variables('funcName')]",
+      "location": "[parameters('location')]",
+      "kind": "[concat('functionapp,linux')]",
+      "identity": { "type": "SystemAssigned" },
+      "dependsOn": [ "[variables('appPlan')]" ],
+      "properties": {
+        "siteConfig": {
+          "linuxFxVersion": "[concat('Python|', if(equals(parameters('functionRuntime'),'python'),'3.11','18-lts'))]",
+          "appSettings": [
+            { "name": "FUNCTIONS_WORKER_RUNTIME", "value": "[parameters('functionRuntime')]" },
+            { "name": "WEBSITE_RUN_FROM_PACKAGE", "value": "1" },
+            {
+              "name": "AzureWebJobsStorage",
+              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', parameters('storageName'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('storageName')), '2024-02-01').keys[0].value)]"
+            },
+            {
+              "name": "SPEECH_RESOURCE_KEY",
+              "value": "[listKeys(resourceId('Microsoft.CognitiveServices/accounts', parameters('speechName')), '2025-06-01').key1]"
+            },
+            {
+              "name": "SPEECH_RESOURCE_REGION",
+              "value": "[reference(resourceId('Microsoft.CognitiveServices/accounts', parameters('speechName'))).location]"
+            }
+          ]
+        },
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('appPlan'))]"
+      }
+    },
+    {
+      "type": "Microsoft.EventGrid/systemTopics",
+      "apiVersion": "2024-06-01",
+      "name": "[variables('systemTopic')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "source": "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageName'))]",
+        "topicType": "microsoft.storage.storageaccounts"
+      }
+    },
+    {
+      "type": "Microsoft.EventGrid/systemTopics/eventSubscriptions",
+      "apiVersion": "2024-06-01",
+      "name": "[format('{0}/input-to-whisper', variables('systemTopic'))]",
+      "dependsOn": [ "[variables('systemTopic')]" ],
+      "properties": {
+        "destination": {
+          "endpointType": "AzureFunction",
+          "resourceId": "[resourceId('Microsoft.Web/sites/functions', variables('funcName'), 'StartTranscription')]"
+        },
+        "filter": {
+          "includedEventTypes": [ "Microsoft.Storage.BlobCreated" ],
+          "subjectBeginsWith": "/blobServices/default/containers/input"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.EventGrid/systemTopics/eventSubscriptions",
+      "apiVersion": "2024-06-01",
+      "name": "[format('{0}/output-to-table', variables('systemTopic'))]",
+      "dependsOn": [ "[variables('systemTopic')]" ],
+      "properties": {
+        "destination": {
+          "endpointType": "AzureFunction",
+          "resourceId": "[resourceId('Microsoft.Web/sites/functions', variables('funcName'), 'SaveTranscript')]"
+        },
+        "filter": {
+          "includedEventTypes": [ "Microsoft.Storage.BlobCreated" ],
+          "subjectBeginsWith": "/blobServices/default/containers/output"
+        }
+      }
+    }
+  ]
+}
