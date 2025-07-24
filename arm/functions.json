@@ -37,8 +37,7 @@
             { "name": "WEBSITE_RUN_FROM_PACKAGE", "value": "1" },
 
             { "name": "AzureWebJobsStorage",
-              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', parameters('storageName'),
-                       ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('storageName')), '2025-01-01').keys[0].value)]" },
+              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', parameters('storageName'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('storageName')), '2025-01-01').keys[0].value)]" },
 
             { "name": "SPEECH_RESOURCE_KEY",
               "value": "[listKeys(resourceId('Microsoft.CognitiveServices/accounts', parameters('speechName')), '2025-06-01').key1]" },
@@ -49,6 +48,8 @@
         "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('appPlan'))]"
       }
     },
+
+    /* ----------  Event Grid wiring (2023‑12‑15‑preview) ---------- */
 
     {
       "type": "Microsoft.EventGrid/systemTopics",
@@ -62,14 +63,18 @@
     },
     {
       "type": "Microsoft.EventGrid/systemTopics/eventSubscriptions",
-      "apiVersion": "2022-06-15",
+      "apiVersion": "2023-12-15-preview",
       "name": "[format('{0}/input-to-whisper', variables('systemTopic'))]",
-      "dependsOn": [ "[variables('systemTopic')]" ],
+      "dependsOn": [
+        "[variables('systemTopic')]",
+        "[resourceId('Microsoft.Web/sites', variables('funcName'))]"
+      ],
       "properties": {
         "destination": {
           "endpointType": "AzureFunction",
           "properties": {
-            "resourceId": "[resourceId('Microsoft.Web/sites/functions', variables('funcName'), 'StartTranscription')]"
+            "azureFunctionAppResourceId": "[resourceId('Microsoft.Web/sites', variables('funcName'))]",
+            "azureFunctionName": "StartTranscription"
           }
         },
         "filter": {
@@ -80,14 +85,18 @@
     },
     {
       "type": "Microsoft.EventGrid/systemTopics/eventSubscriptions",
-      "apiVersion": "2022-06-15",
+      "apiVersion": "2023-12-15-preview",
       "name": "[format('{0}/output-to-table', variables('systemTopic'))]",
-      "dependsOn": [ "[variables('systemTopic')]" ],
+      "dependsOn": [
+        "[variables('systemTopic')]",
+        "[resourceId('Microsoft.Web/sites', variables('funcName'))]"
+      ],
       "properties": {
         "destination": {
           "endpointType": "AzureFunction",
           "properties": {
-            "resourceId": "[resourceId('Microsoft.Web/sites/functions', variables('funcName'), 'SaveTranscript')]"
+            "azureFunctionAppResourceId": "[resourceId('Microsoft.Web/sites', variables('funcName'))]",
+            "azureFunctionName": "SaveTranscript"
           }
         },
         "filter": {
