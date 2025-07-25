@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <meta charset="utf-8">
+  <title>M‑Transcriber</title>
+  <style>
+    body{font-family:sans-serif;text-align:center;margin:4rem}
+    #drop{border:3px dashed #888;padding:3rem;border-radius:12px;transition:.2s}
+  </style>
+
+  <h1>Upload audio to transcribe</h1>
+  <div id="drop">Drag & drop an audio file here</div>
+
+  <script>
+    (async () => {
+      /*  For a quick demo we hard‑code a long‑lived SAS on the input container.
+          Replace <SAS_TOKEN> with the one you generated earlier.                */
+      const uploadBase =
+        "https://mtransstg7w3idjrkqydcc.blob.core.windows.net/input?<SAS_TOKEN>";
+
+      const drop = document.getElementById("drop");
+      drop.ondragover = e => { e.preventDefault(); drop.style.borderColor="#4caf50"; };
+      drop.ondragleave = ()  => drop.style.borderColor="#888";
+      drop.ondrop = async e => {
+        e.preventDefault();
+        const file = e.dataTransfer.files[0];
+        if(!file) return;
+        drop.textContent = "Uploading " + file.name + "…";
+
+        const res = await fetch(uploadBase + "&" + encodeURIComponent(file.name), {
+          method:"PUT",
+          headers:{ "x-ms-blob-type": "BlockBlob" },
+          body: file
+        });
+        drop.textContent = res.ok
+          ? "Uploaded! Transcript will appear shortly."
+          : "Upload failed.";
+      };
+    })();
+  </script>
+</html>
